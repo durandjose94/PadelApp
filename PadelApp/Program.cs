@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+ï»¿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,11 +12,11 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Área de servicios - INICIO
+// Area de servicios - INICIO
 
 builder.Services.AddControllers();
 
-// 1. Obtener la cadena de conexión de appsettings.json
+// 1. Obtener la cadena de conexion de appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // 2. Configurar el DbContext - MySQL
@@ -39,14 +39,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 errorNumbersToAdd: null);
         }));
 
-// Agrega Swagger para documentación de la API
+// Agrega Swagger para documentacion de la API
 
 builder.Services.AddSwaggerGen(options =>
     {
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description =
-            "Autenticación JWT usando el esquema Bearer. \r\n\r\n " +
+            "AutenticaciÃ³n JWT usando el esquema Bearer. \r\n\r\n " +
             "Ingresa la palabra 'Bearer' seguida de un espacio y luego tu token.\r\n\r\n" +
             "Ejemplo: \"Bearer trtrtgfgsdgsdfsdfsdfw\""
             ,
@@ -85,24 +85,24 @@ builder.Services.AddCors(options =>
     });
 });
 
-//Agregamos repositorios e interfaces a la inyección de dependencias
+//Agregamos repositorios e interfaces a la inyeccion de dependencias
 
 builder.Services.AddScoped<ISedeRepositorio, SedeRepositorio>();
 builder.Services.AddScoped<IPistaRepositorio, PistaRepositorio>();
 builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 builder.Services.AddScoped<IReservaRepositorio, ReservaRepositorio>();
-builder.Services.AddScoped<IRecuperarContraseñaRepositorio, RecuperarContraseñaRepositorio>();
+builder.Services.AddScoped<IRecuperarContraseÃ±aRepositorio, RecuperarContraseÃ±aRepositorio>();
 
-//Agregamos servicios e interfaces a la inyección de dependencias
+//Agregamos servicios e interfaces a la inyeccion de dependencias
 builder.Services.AddScoped<IComprobanteServicio, ComprobanteServicio>();
 builder.Services.AddScoped<IEmailServicio, EmailServicio>();
 
 var key = builder.Configuration.GetValue<string>("ApiSettings:Secreta");
 
-//Agregar AutoMapper 
+//Agregar AutoMapper
 builder.Services.AddAutoMapper(typeof(PadelMapper));
 
-//Agregar autenticación y autorización (si es necesario)
+//Agregar autenticacion y autorizacion (si es necesario)
 builder.Services.AddAuthentication
     (
         x =>
@@ -124,11 +124,11 @@ builder.Services.AddAuthentication
     }
     );
 
-// Área de servicios - FIN
+// Area de servicios - FIN
 
 var app = builder.Build();
 
-// Área de middlewares - INICIO
+// Area de middlewares - INICIO
 
 app.UseSwagger(); // Habilita Swagger
 
@@ -139,6 +139,6 @@ app.UseCors("PoliticaCors");
 
 app.MapControllers();
 
-// Área de middlewares - FIN
+// Area de middlewares - FIN
 
 app.Run();
