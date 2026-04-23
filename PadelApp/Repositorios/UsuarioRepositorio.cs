@@ -32,7 +32,7 @@ namespace PadelApp.Repositorios
         public async Task<ResultadoBorradoUsuario> EliminarUsuarioAsync(Usuario usuario)
         {
             var ahora = DateTime.Now;
-            
+
             DateOnly fechaHoy = DateOnly.FromDateTime(ahora);
             TimeOnly horaActual = TimeOnly.FromDateTime(ahora);
 
@@ -85,7 +85,7 @@ namespace PadelApp.Repositorios
         public async Task<IEnumerable<Usuario>> GetUsuariosAsync()
         {
             return await _db.Usuarios
-                .Where(u => u.activo == true)
+                .Where(u => u.activo == true && u.idRol == 2)
                 .OrderBy(u => u.nombre)
                 .ToListAsync();
         }
@@ -116,6 +116,7 @@ namespace PadelApp.Repositorios
             {
                 var f = filtro.ToLower().Trim();
                 query = query.Where(u =>
+                u.idRol == 2 &&
                 u.activo == true && (
                     u.nombre.ToLower().Contains(f) ||
                     u.apellidos.ToLower().Contains(f) ||

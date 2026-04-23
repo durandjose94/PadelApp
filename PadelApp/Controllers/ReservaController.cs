@@ -57,8 +57,8 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> GetReservasPorUsuario(int idUsuario)
         {
             var listaReservas = await _reservaRepositorio.GetReservasPorUsuarioAsync(idUsuario);
-            if (listaReservas == null || !listaReservas.Any())
-                return NotFound("No se encontraron reservas para este usuario.");
+            /*if (listaReservas == null || !listaReservas.Any())
+                return NotFound("No se encontraron reservas para este usuario.");*/
 
             var listaReservasDto = _mapper.Map<IEnumerable<ReservaDto>>(listaReservas);
             return Ok(listaReservasDto);

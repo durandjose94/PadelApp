@@ -72,7 +72,7 @@ namespace PadelApp.Controllers
                     new Claim(ClaimTypes.Name, usuario.idUsuario.ToString()),
                     new Claim(ClaimTypes.Role, usuario.idRol.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddHours(1),
+                Expires = DateTime.UtcNow.AddHours(8), //durará todo el día
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 

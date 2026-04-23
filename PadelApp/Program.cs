@@ -137,6 +137,12 @@ app.UseSwaggerUI(); // Habilita la UI de Swagger
 //Soporta para CORS (Cross-Origin Resource Sharing)
 app.UseCors("PoliticaCors");
 
+// 2. Autenticacion 
+app.UseAuthentication();
+
+// 3. Autorizacion 
+app.UseAuthorization();
+
 app.MapControllers();
 
 // Area de middlewares - FIN
