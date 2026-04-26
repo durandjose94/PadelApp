@@ -18,5 +18,6 @@ namespace PadelApp.Modelos.Dtos
         public string password { get; set; }
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria")]
         public DateOnly fecha_nacimiento { get; set; }
+        public NivelPadel nivel { get; set; }
     }
 }

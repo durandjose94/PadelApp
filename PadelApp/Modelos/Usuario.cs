@@ -3,8 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PadelApp.Modelos
 {
+    public enum NivelPadel
+    {
+        Principiante = 1,
+        Iniciacion = 2,
+        Intermedio = 3,
+        Avanzado = 4,
+        Experto = 5,
+        Profesional = 6
+    }
     public class Usuario
     {
+
         [Key]
         public int idUsuario { get; set; }
         [Required]
@@ -24,6 +34,8 @@ namespace PadelApp.Modelos
         public DateTime fecha_registro { get; set; }
         public DateTime? fecha_actualizacion { get; set; }
         public bool activo { get; set; }
+        [Required]
+        public NivelPadel nivel { get; set; }
         public int idRol { get; set; }
         [ForeignKey("idRol")]
         public Rol Rol { get; set; }

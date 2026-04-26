@@ -13,6 +13,7 @@ namespace PadelApp.Modelos.Dtos
         public string direccion { get; set; }
         public string telefono { get; set; }
         public string email { get; set; }        
-        public DateOnly fecha_nacimiento { get; set; }       
+        public DateOnly fecha_nacimiento { get; set; }
+        public NivelPadel nivel { get; set; }
     }
 }

@@ -20,6 +20,7 @@ namespace PadelApp.Modelos.Dtos
         public DateTime fecha_registro { get; set; }
         public DateTime? fecha_actualizacion { get; set; }
         public bool activo { get; set; }
+        public NivelPadel nivel { get; set; }
         public int idRol { get; set; }
     }
 }
