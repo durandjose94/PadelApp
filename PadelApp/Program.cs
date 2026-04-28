@@ -92,6 +92,7 @@ builder.Services.AddScoped<IPistaRepositorio, PistaRepositorio>();
 builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 builder.Services.AddScoped<IReservaRepositorio, ReservaRepositorio>();
 builder.Services.AddScoped<IRecuperarContraseñaRepositorio, RecuperarContraseñaRepositorio>();
+builder.Services.AddScoped<IAnuncioRepositorio, AnuncioRepositorio>();
 
 //Agregamos servicios e interfaces a la inyeccion de dependencias
 builder.Services.AddScoped<IComprobanteServicio, ComprobanteServicio>();

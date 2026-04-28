@@ -15,5 +15,6 @@ namespace PadelApp.Datos
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Reserva> Reservas { get; set; }
         public DbSet<RecuperacionPassword> RecuperacionPasswords { get; set; }
+        public DbSet<Anuncio> Anuncios { get; set; }
     }
 }

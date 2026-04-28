@@ -40,6 +40,11 @@ namespace PadelApp.PadelMapper
                 });
 
             CreateMap<Reserva, CrearReservaDto>().ReverseMap();
+            CreateMap<Anuncio, AnuncioDto>()
+                .ForMember(dest => dest.nombreUsuario, opt => opt.MapFrom(src =>
+                    src.usuario != null ? $"{src.usuario.nombre} {src.usuario.apellidos}" : "Usuario desconocido"));
+            CreateMap<CrearAnuncioDto, Anuncio>();
+            CreateMap<ModificarAnuncioDto, Anuncio>().ReverseMap();
         }
     }
 }
