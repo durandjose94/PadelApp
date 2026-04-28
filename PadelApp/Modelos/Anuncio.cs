@@ -18,7 +18,7 @@ namespace PadelApp.Modelos
         [Required]
         public int idUsuario { get; set; }
 
-        [ForeignKey("IdUsuario")]
+        [ForeignKey("idUsuario")]
         public virtual Usuario usuario { get; set; }
 
         [Required]
