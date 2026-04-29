@@ -57,12 +57,14 @@ namespace PadelApp.Controllers
         [HttpPut("{idAnuncio}")]
         public async Task<IActionResult> ActualizarAnuncio(int idAnuncio, [FromBody] ModificarAnuncioDto modificarAnuncioDto)
         {
-            if (!ModelState.IsValid || idAnuncio != modificarAnuncioDto.idAnuncio) return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var anuncioExistente = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio);
             if (anuncioExistente == null) return NotFound();
 
             _mapper.Map(modificarAnuncioDto, anuncioExistente);
+
+            anuncioExistente.idAnuncio = idAnuncio;
 
             if (!await _repoAnuncio.ActualizarAnuncioAsync(anuncioExistente)) return StatusCode(500);
 
@@ -74,6 +76,21 @@ namespace PadelApp.Controllers
         {
             if (!await _repoAnuncio.EliminarAnuncioAsync(idAnuncio)) return NotFound();
             return NoContent();
+        }
+
+        [HttpGet("{idAnuncio:int}", Name = "GetAnuncio")]
+        public async Task<IActionResult> GetAnuncio(int idAnuncio)
+        {
+            var anuncio = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio);
+
+            if (anuncio == null)
+            {
+                return NotFound(new { message = "El anuncio no existe." });
+            }
+
+            var anuncioDto = _mapper.Map<AnuncioDto>(anuncio);
+
+            return Ok(anuncioDto);
         }
     }
 }

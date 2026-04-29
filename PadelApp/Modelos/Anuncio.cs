@@ -5,7 +5,9 @@ namespace PadelApp.Modelos
 {
     public enum TipoAnuncio
     {
+        [Display(Name = "Partido")]
         Partido = 0,
+        [Display(Name = "Clases")]
         Clases = 1
     }
 

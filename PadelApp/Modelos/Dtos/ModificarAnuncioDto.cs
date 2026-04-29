@@ -5,9 +5,6 @@ namespace PadelApp.Modelos.Dtos
     public class ModificarAnuncioDto
     {
         [Required]
-        public int idAnuncio { get; set; } // Necesario para saber cuál editamos
-
-        [Required]
         [StringLength(100)]
         public string titulo { get; set; }
 

@@ -42,9 +42,22 @@ namespace PadelApp.PadelMapper
             CreateMap<Reserva, CrearReservaDto>().ReverseMap();
             CreateMap<Anuncio, AnuncioDto>()
                 .ForMember(dest => dest.nombreUsuario, opt => opt.MapFrom(src =>
-                    src.usuario != null ? $"{src.usuario.nombre} {src.usuario.apellidos}" : "Usuario desconocido"));
-            CreateMap<CrearAnuncioDto, Anuncio>();
-            CreateMap<ModificarAnuncioDto, Anuncio>().ReverseMap();
+                    src.usuario != null ? $"{src.usuario.nombre} {src.usuario.apellidos}" : "Usuario desconocido"))
+                .ForMember(dest => dest.tipoAnuncioDescripcion,
+                    opt => opt.MapFrom(src => src.tipoAnuncio.GetDisplayName()))
+                //Descripción del Nivel (Principiante, Iniciación...)
+                .ForMember(dest => dest.nivelRequeridoDescripcion, opt => opt.MapFrom(src =>
+                    src.nivelRequerido.HasValue ? ((NivelPadel)(int)src.nivelRequerido.Value).ToString() : "Nivel no definido"))
+                .AfterMap((src, dest) =>
+                {
+                    //Si queremos que para "Clases" no ponga nivel
+                    if (src.tipoAnuncio == TipoAnuncio.Clases)
+                    {
+                        dest.nivelRequeridoDescripcion = "N/A";
+                    }
+                });
+            CreateMap<Anuncio, CrearAnuncioDto>().ReverseMap();
+            CreateMap<Anuncio, ModificarAnuncioDto>().ReverseMap();
         }
     }
 }

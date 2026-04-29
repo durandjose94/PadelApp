@@ -27,8 +27,12 @@ namespace PadelApp.Repositorios
 
         public async Task<IEnumerable<Anuncio>> GetAnunciosByUsuarioAsync(int idUsuario)
         {
+            var fechaCorte = DateTime.Now.AddDays(-10);
+
             return await _context.Anuncios
-                .Where(a => a.idUsuario == idUsuario)
+                .Where(a => a.idUsuario == idUsuario &&
+                   (a.fechaExpiracion >= DateTime.Now || a.fechaExpiracion >= fechaCorte))
+                .OrderByDescending(a => a.fechaExpiracion)
                 .OrderByDescending(a => a.fecha_registro)
                 .ToListAsync();
         }

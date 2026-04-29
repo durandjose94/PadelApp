@@ -6,9 +6,11 @@
         public int idUsuario { get; set; }
         public string nombreUsuario { get; set; } // Extraído de la relación con Usuario
         public TipoAnuncio tipoAnuncio { get; set; }
+        public string tipoAnuncioDescripcion { get; set; }
         public string titulo { get; set; }
         public string descripcion { get; set; }
         public decimal? nivelRequerido { get; set; }
+        public string nivelRequeridoDescripcion { get; set; }
         public DateTime? fechaEvento { get; set; }
         public DateTime fechaExpiracion { get; set; }
         public string telefonoContacto { get; set; }
