@@ -66,6 +66,7 @@ namespace PadelApp.Controllers
             if (!sede.activo) return BadRequest("No se puede actualizar una sede inactiva.");
 
             _mapper.Map(modificarSedeDto, sede);
+            sede.idClub = idClub;
 
             if (!await _sedeRepositorio.ActualizarSedeAsync(sede))
             {
@@ -91,6 +92,7 @@ namespace PadelApp.Controllers
             }
 
             var sede = _mapper.Map<Sede>(crearSedeDto);
+            sede.idClub = idClub;
 
             if (!await _sedeRepositorio.CrearSedeAsync(sede))
             {

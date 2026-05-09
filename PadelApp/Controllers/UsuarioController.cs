@@ -24,7 +24,7 @@ namespace PadelApp.Controllers
         private readonly IMapper _mapper;
         private readonly string claveSecreta;
 
-        public UsuarioController(IUsuarioRepositorio usuarioRepositorio, IMapper mapper, IConfiguration config , IInvitacionRepositorio invitacionRepositorio)
+        public UsuarioController(IUsuarioRepositorio usuarioRepositorio, IMapper mapper, IConfiguration config, IInvitacionRepositorio invitacionRepositorio)
         {
             _invitacionRepositorio = invitacionRepositorio;
             _usuarioRepositorio = usuarioRepositorio;
@@ -114,6 +114,7 @@ namespace PadelApp.Controllers
             if (!usuario.activo) return BadRequest("No se puede actualizar un usuario inactivo.");
 
             _mapper.Map(modificarUsuarioDto, usuario);
+            usuario.idClub = idClub;
 
             if (!await _usuarioRepositorio.ModificarUsuarioAsync(usuario))
             {
