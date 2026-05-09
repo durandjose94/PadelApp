@@ -67,21 +67,21 @@ namespace PadelApp.Repositorios
         }
         public async Task<bool> ExistePistaAsync(int idPista, int idClub)
         {
-            return await _db.Pistas.AnyAsync(s => s.idPista == idPista);
+            return await _db.Pistas.AnyAsync(s => s.idPista == idPista && s.Sede.idClub == idClub);
         }
         public async Task<bool> ExistePistaAsync(string nombrePista, int idClub)
         {
-            return await _db.Pistas.AnyAsync(s => s.nombrePista.ToLower().Trim() == nombrePista.ToLower().Trim() && s.activo);
+            return await _db.Pistas.AnyAsync(s => s.nombrePista.ToLower().Trim() == nombrePista.ToLower().Trim() && s.activo && s.Sede.idClub == idClub);
         }
         public async Task<Pista> GetPistaAsync(int idPista, int idClub)
         {
             return await _db.Pistas
                 .Include(p => p.Sede)
-                .FirstOrDefaultAsync(p => p.idPista == idPista);
+                .FirstOrDefaultAsync(p => p.idPista == idPista && p.Sede.idClub == idClub);
         }
         public async Task<ICollection<Pista>> GetPistasAsync(int idClub)
         {
-            return await _db.Pistas.Where(p => p.activo == true)
+            return await _db.Pistas.Where(p => p.activo == true && p.Sede.idClub == idClub)
                 .Include(p => p.Sede) // Incluimos la sede para que el DTO tenga el nombre
                 .OrderBy(s => s.nombrePista)
                 .ToListAsync();
