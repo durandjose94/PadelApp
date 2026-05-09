@@ -51,8 +51,9 @@ namespace PadelApp.Controllers
             var usuario = _mapper.Map<Usuario>(registroDto);
             usuario.idClub = invitacion.IdClub;
             var usuarioCreado = await _usuarioRepositorio.RegistrarUsuarioAsync(usuario);
-
             if (usuarioCreado == null) return BadRequest("Error al registrar el usuario");
+
+            await _invitacionRepositorio.MarcarComoUsadaAsync(invitacion.Id);
 
             return Ok(usuarioCreado);
         }

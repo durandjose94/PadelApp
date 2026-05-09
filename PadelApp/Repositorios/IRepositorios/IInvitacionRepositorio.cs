@@ -7,7 +7,6 @@ namespace PadelApp.Repositorios.IRepositorios
     {
         Task<InvitacionClub> CrearInvitacionAsync(CrearInvitacionDto dto);
         Task<InvitacionClub> ValidarInvitacionAsync(string email, string codigo);
-        Task<bool> MarcarComoUsadaAsync(string codigo);
-        //Task<int?> ObtenerClubPorInvitacionValidaAsync(string email, string codigo);
+        Task<bool> MarcarComoUsadaAsync(int idInvitacion);        
     }
 }

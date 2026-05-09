@@ -79,25 +79,14 @@ namespace PadelApp.Repositorios
                 i.FechaExpiracion > DateTime.Now);
         }
 
-        public async Task<bool> MarcarComoUsadaAsync(string codigo)
+        public async Task<bool> MarcarComoUsadaAsync(int idInvitacion)
         {
-            var invitacion = await _db.InvitacionClubes.FirstOrDefaultAsync(i => i.Codigo == codigo);
+            var invitacion = await _db.InvitacionClubes.FirstOrDefaultAsync(i => i.Id == idInvitacion);
             if (invitacion == null) return false;
 
             invitacion.Usado = true;
+            _db.InvitacionClubes.Update(invitacion);
             return await _db.SaveChangesAsync() >= 0;
         }
-
-        /*public async Task<int?> ObtenerClubPorInvitacionValidaAsync(string email, string codigo)
-        {
-            var invitacion = await _db.InvitacionClubes.FirstOrDefaultAsync(i =>
-                i.Email == email &&
-                i.Codigo == codigo &&
-                !i.Usado &&
-                i.FechaExpiracion > DateTime.Now);
-
-            // Si existe y es válida, devolvemos el IdClub, si no, null
-            return invitacion?.IdClub;
-        }*/
     }
 }
