@@ -39,13 +39,13 @@ namespace PadelApp.Repositorios
 
         public async Task<ResultadoBorradoSede> EliminarSedeAsync(Sede sede)
         {
-            if (await _db.Pistas.AnyAsync(r => r.idSede == sede.idSede && r.activo))
+            if (await _db.Pistas.AnyAsync(r => r.idSede == sede.idSede && r.activo && r.Sede.idClub == sede.idClub))
                 return ResultadoBorradoSede.TienePistasActivas;
 
-            if (await _db.Reservas.AnyAsync(r => r.Pista.idSede == sede.idSede && r.estado == EstadoReserva.Pagada))
+            if (await _db.Reservas.AnyAsync(r => r.Pista.idSede == sede.idSede && r.estado == EstadoReserva.Pagada && r.Pista.Sede.idClub == sede.idClub))
                 return ResultadoBorradoSede.TieneReservasPagadas;
 
-            bool tienePistasInactivas = await _db.Pistas.AnyAsync(r => r.idSede == sede.idSede && !r.activo);
+            bool tienePistasInactivas = await _db.Pistas.AnyAsync(r => r.idSede == sede.idSede && !r.activo && r.Sede.idClub == sede.idClub);
 
             if (tienePistasInactivas)
             {
@@ -61,34 +61,33 @@ namespace PadelApp.Repositorios
             return await GuardarAsync() ? ResultadoBorradoSede.Exito : ResultadoBorradoSede.ErrorServidor;
         }
 
-        public async Task<bool> ExisteSedeAsync(int idSede)
+        public async Task<bool> ExisteSedeAsync(int idSede, int idClub)
         {
-            return await _db.Sedes.AnyAsync(s => s.idSede == idSede);
+            return await _db.Sedes.AnyAsync(s => s.idSede == idSede && s.idClub == idClub);
         }
 
-        public async Task<bool> ExisteSedeAsync(string nombreSede)
+        public async Task<bool> ExisteSedeAsync(string nombreSede, int idClub)
         {
             string nombreNormalizado = nombreSede.ToLower().Trim();
             return await _db.Sedes.AnyAsync(s =>
-                s.nombreSede.ToLower().Trim() == nombreNormalizado && s.activo);
+                s.nombreSede.ToLower().Trim() == nombreNormalizado && s.activo && s.idClub == idClub);
         }
 
-        public async Task<Sede> GetSedeAsync(int idSede)
+        public async Task<Sede> GetSedeAsync(int idSede, int idClub)
         {
-            return await _db.Sedes.FirstOrDefaultAsync(s => s.idSede == idSede);
+            return await _db.Sedes.FirstOrDefaultAsync(s => s.idSede == idSede && s.idClub == idClub);
         }
 
-        public async Task<IEnumerable<Sede>> GetSedesAsync()
+        public async Task<IEnumerable<Sede>> GetSedesAsync(int idClub)
         {
             return await _db.Sedes
-                .Where(s => s.activo == true)
+                .Where(s => s.activo == true && s.idClub == idClub)
                 .OrderBy(s => s.nombreSede)
                 .ToListAsync();
         }
 
         public async Task<bool> GuardarAsync()
         {
-            // SaveChangesAsync devuelve el número de filas afectadas
             return await _db.SaveChangesAsync() >= 0;
         }
     }

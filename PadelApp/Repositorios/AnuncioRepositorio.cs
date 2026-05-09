@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using PadelApp.Datos;
 using PadelApp.Modelos;
 using PadelApp.Modelos.Dtos;
@@ -16,32 +17,32 @@ namespace PadelApp.Repositorios
             _context = context;
         }
 
-        public async Task<IEnumerable<Anuncio>> GetAnunciosActivosAsync()
+        public async Task<IEnumerable<Anuncio>> GetAnunciosActivosAsync(int idClub)
         {
             return await _context.Anuncios
                 .Include(a => a.usuario)
-                .Where(a => a.fechaExpiracion >= DateTime.Now)
+                .Where(a => a.fechaExpiracion >= DateTime.Now && a.usuario.idClub == idClub)
                 .OrderByDescending(a => a.fecha_registro)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Anuncio>> GetAnunciosByUsuarioAsync(int idUsuario)
+        public async Task<IEnumerable<Anuncio>> GetAnunciosByUsuarioAsync(int idUsuario, int idClub)
         {
             var fechaCorte = DateTime.Now.AddDays(-10);
 
             return await _context.Anuncios
-                .Where(a => a.idUsuario == idUsuario &&
+                .Where(a => a.idUsuario == idUsuario && a.usuario.idClub == idClub &&
                    (a.fechaExpiracion >= DateTime.Now || a.fechaExpiracion >= fechaCorte))
                 .OrderByDescending(a => a.fechaExpiracion)
                 .OrderByDescending(a => a.fecha_registro)
                 .ToListAsync();
         }
 
-        public async Task<Anuncio> GetAnuncioByIdAsync(int idAnuncio)
+        public async Task<Anuncio> GetAnuncioByIdAsync(int idAnuncio, int idClub)
         {
             return await _context.Anuncios
                 .Include(a => a.usuario)
-                .FirstOrDefaultAsync(a => a.idAnuncio == idAnuncio);
+                .FirstOrDefaultAsync(a => a.idAnuncio == idAnuncio && a.usuario.idClub == idClub);
         }
 
         public async Task<Anuncio> CrearAnuncioAsync(Anuncio anuncio)
@@ -86,10 +87,11 @@ namespace PadelApp.Repositorios
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<int> CountAnunciosActivosUsuarioAsync(int idUsuario, TipoAnuncio tipo)
+        public async Task<int> CountAnunciosActivosUsuarioAsync(int idUsuario, TipoAnuncio tipo, int idClub)
         {
             return await _context.Anuncios
                 .CountAsync(a => a.idUsuario == idUsuario &&
+                                 a.usuario.idClub == idClub &&
                                  a.tipoAnuncio == tipo &&
                                  a.fechaExpiracion >= DateTime.Now);
         }

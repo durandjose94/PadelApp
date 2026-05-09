@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace PadelApp.Modelos.Dtos
 {
     public class UsuarioDto
-    {        
+    {
         public int idUsuario { get; set; }
         [Required]
         public string nombre { get; set; }
@@ -22,5 +22,7 @@ namespace PadelApp.Modelos.Dtos
         public bool activo { get; set; }
         public NivelPadel nivel { get; set; }
         public int idRol { get; set; }
+        public int idClub { get; set; }
+        public string nombreClub { get; set; }
     }
 }

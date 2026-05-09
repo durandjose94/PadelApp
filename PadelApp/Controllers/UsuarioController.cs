@@ -17,14 +17,16 @@ namespace PadelApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsuarioController : ControllerBase
+    public class UsuarioController : PadelControllerBase
     {
+        private readonly IInvitacionRepositorio _invitacionRepositorio;
         private readonly IUsuarioRepositorio _usuarioRepositorio;
         private readonly IMapper _mapper;
         private readonly string claveSecreta;
 
-        public UsuarioController(IUsuarioRepositorio usuarioRepositorio, IMapper mapper, IConfiguration config)
+        public UsuarioController(IUsuarioRepositorio usuarioRepositorio, IMapper mapper, IConfiguration config , IInvitacionRepositorio invitacionRepositorio)
         {
+            _invitacionRepositorio = invitacionRepositorio;
             _usuarioRepositorio = usuarioRepositorio;
             _mapper = mapper;
             claveSecreta = config.GetValue<string>("ApiSettings:Secreta");
@@ -35,12 +37,19 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioDto registroDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            // 1. Validamos invitación y obtenemos el Club de forma aislada
+            var invitacion = await _invitacionRepositorio.ValidarInvitacionAsync(registroDto.email, registroDto.CodigoInvitacion);
 
-            // Verificación de email único asíncrona
-            if (!await _usuarioRepositorio.UsuarioUnicoAsync(registroDto.email))
+            if (invitacion == null)
+            {
+                return BadRequest("El código de invitación es inválido, ya fue usado o el correo no coincide.");
+            }
+            // 2. Verificación de email único asíncrona
+            if (!await _usuarioRepositorio.UsuarioUnicoAsync(registroDto.email, invitacion.IdClub))
                 return BadRequest("El email ya está registrado");
 
             var usuario = _mapper.Map<Usuario>(registroDto);
+            usuario.idClub = invitacion.IdClub;
             var usuarioCreado = await _usuarioRepositorio.RegistrarUsuarioAsync(usuario);
 
             if (usuarioCreado == null) return BadRequest("Error al registrar el usuario");
@@ -54,11 +63,12 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> Login([FromBody] LoginUsuarioDto loginDto)
         {
             // Recuperamos el usuario de forma asíncrona
-            var usuario = await _usuarioRepositorio.GetUsuarioAsync(loginDto.email);
+            var usuario = await _usuarioRepositorio.GetUsuarioAsync(loginDto.email, loginDto.idClub);
 
-            if (usuario == null || !PasswordEncripted.VerificarPassword(loginDto.password, usuario.password))
+            if (usuario == null || !PasswordEncripted.VerificarPassword(loginDto.password, usuario.password) ||
+                usuario.idClub != loginDto.idClub)
             {
-                return Unauthorized(new { mensaje = "Credenciales incorrectas" });
+                return Unauthorized(new { mensaje = "Credenciales incorrectas para este club" });
             }
 
             // --- Lógica de Generación de Token ---
@@ -70,7 +80,8 @@ namespace PadelApp.Controllers
                 Subject = new ClaimsIdentity(new Claim[]
                 {
                     new Claim(ClaimTypes.Name, usuario.idUsuario.ToString()),
-                    new Claim(ClaimTypes.Role, usuario.idRol.ToString())
+                    new Claim(ClaimTypes.Role, usuario.idRol.ToString()),
+                    new Claim("idClub", usuario.idClub.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddHours(8), //durará todo el día
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -93,8 +104,10 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> ModificarUsuario(int idUsuario, [FromBody] ModificarUsuarioDto modificarUsuarioDto)
         {
             if (!ModelState.IsValid || modificarUsuarioDto == null) return BadRequest(ModelState);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario);
+            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario, idClub);
             if (usuario == null) return NotFound($"No se encontró el usuario con id : {idUsuario}");
 
             if (!usuario.activo) return BadRequest("No se puede actualizar un usuario inactivo.");
@@ -115,7 +128,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> BorrarUsuario(int idUsuario)
         {
-            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario, idClub);
             if (usuario == null) return NotFound();
 
             var result = await _usuarioRepositorio.EliminarUsuarioAsync(usuario);
@@ -133,7 +148,9 @@ namespace PadelApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsuarios()
         {
-            var listaUsuarios = await _usuarioRepositorio.GetUsuariosAsync();
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaUsuarios = await _usuarioRepositorio.GetUsuariosAsync(idClub);
             var listaUsuariosDto = _mapper.Map<IEnumerable<UsuarioDto>>(listaUsuarios);
             return Ok(listaUsuariosDto);
         }
@@ -142,7 +159,9 @@ namespace PadelApp.Controllers
         [HttpGet("{idUsuario:int}")]
         public async Task<IActionResult> GetUsuario(int idUsuario)
         {
-            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var usuario = await _usuarioRepositorio.GetUsuarioAsync(idUsuario, idClub);
             if (usuario == null) return NotFound();
 
             var usuarioDto = _mapper.Map<UsuarioDto>(usuario);
@@ -154,7 +173,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetUsuariosFiltrados([FromQuery] string filtro)
         {
-            var usuarios = await _usuarioRepositorio.GetUsuariosConFiltroAsync(filtro);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var usuarios = await _usuarioRepositorio.GetUsuariosConFiltroAsync(filtro, idClub);
 
             var usuariosDto = _mapper.Map<IEnumerable<UsuarioDto>>(usuarios);
 

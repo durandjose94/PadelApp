@@ -13,33 +13,33 @@ namespace PadelApp.Repositorios
         {
             _db = db;
         }
-        public async Task<IEnumerable<Reserva>> GetReservasAsync()
+        public async Task<IEnumerable<Reserva>> GetReservasAsync(int idClub)
         {
             return await _db.Reservas
                 .Include(r => r.Pista).ThenInclude(p => p.Sede)
-                .Include(r => r.Usuario)
+                .Include(r => r.Usuario).Where(r => r.Usuario.idClub == idClub)
                 .OrderByDescending(r => r.fecha_reserva)
                 .ToListAsync();
         }
 
-        public async Task<Reserva> GetReservaAsync(int idReserva)
+        public async Task<Reserva> GetReservaAsync(int idReserva, int idClub)
         {
             return await _db.Reservas
                 .Include(r => r.Pista).ThenInclude(p => p.Sede)
                 .Include(r => r.Usuario)
-                .FirstOrDefaultAsync(r => r.idReserva == idReserva);
+                .FirstOrDefaultAsync(r => r.idReserva == idReserva && r.Usuario.idClub == idClub);
         }
 
-        public async Task<IEnumerable<Reserva>> GetReservasPorUsuarioAsync(int idUsuario)
+        public async Task<IEnumerable<Reserva>> GetReservasPorUsuarioAsync(int idUsuario, int idClub)
         {
             return await _db.Reservas
                 .Include(r => r.Pista).ThenInclude(p => p.Sede)
-                .Where(r => r.idUsuario == idUsuario)
+                .Where(r => r.idUsuario == idUsuario && r.Usuario.idClub == idClub)
                 .OrderByDescending(r => r.fecha_reserva)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Reserva>> GetReservasPorSedeAsync(int idSede)
+        public async Task<IEnumerable<Reserva>> GetReservasPorSedeAsync(int idSede, int idClub)
         {
             return await _db.Reservas
                     // Cargamos la Pista y su Sede relacionada para tener los datos completos
@@ -47,7 +47,7 @@ namespace PadelApp.Repositorios
                         .ThenInclude(p => p.Sede)
                         .Include(r => r.Usuario)
                     // Filtramos: "Dame las reservas donde el idSede de la Pista sea igual al parámetro"
-                    .Where(r => r.Pista.idSede == idSede)
+                    .Where(r => r.Pista.idSede == idSede && r.Usuario.idClub == idClub)
                     .OrderByDescending(r => r.fecha_reserva)
                     //.ThenByDescending(r => r.hora_inicio) // Opcional: ordenar también por hora
                     .ToListAsync();
@@ -83,21 +83,22 @@ namespace PadelApp.Repositorios
             return await GuardarAsync();
         }
 
-        public async Task<bool> ExisteReservaAsync(int idReserva)
+        public async Task<bool> ExisteReservaAsync(int idReserva, int idClub)
         {
-            return await _db.Reservas.AnyAsync(r => r.idReserva == idReserva);
+            return await _db.Reservas.AnyAsync(r => r.idReserva == idReserva && r.Usuario.idClub == idClub);
         }
 
-        public async Task<IEnumerable<Reserva>> GetReservasPorPistaYFechaAsync(int idPista, DateOnly fecha)
+        public async Task<IEnumerable<Reserva>> GetReservasPorPistaYFechaAsync(int idPista, DateOnly fecha, int idClub)
         {
             return await _db.Reservas
                 .Where(r => r.idPista == idPista &&
                             r.fecha_reserva == fecha &&
-                            r.estado != EstadoReserva.Cancelada)
+                            r.estado != EstadoReserva.Cancelada &&
+                            r.Usuario.idClub == idClub)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Reserva>> GetReservasConFiltroAsync(string filtro, int idSede)
+        public async Task<IEnumerable<Reserva>> GetReservasConFiltroAsync(string filtro, int idSede, int idClub)
         {
             var query = _db.Reservas.AsQueryable();
 
@@ -105,6 +106,7 @@ namespace PadelApp.Repositorios
             {
                 var f = filtro.ToLower().Trim();
                 query = query.Include(r => r.Usuario).Where(u =>
+                    u.Usuario.idClub == idClub &&
                     u.Pista.idSede == idSede &&
                     (u.Usuario.nombre.ToLower().Contains(f) ||
                     u.Usuario.apellidos.ToLower().Contains(f) ||

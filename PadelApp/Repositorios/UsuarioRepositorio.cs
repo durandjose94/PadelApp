@@ -41,11 +41,12 @@ namespace PadelApp.Repositorios
             // 2. O sean de hoy, pero la hora de fin aún no haya pasado.
             bool tieneReservaActiva = await _db.Reservas
                 .AnyAsync(r => r.idUsuario == usuario.idUsuario &&
+                               r.Usuario.idClub == usuario.idClub &&
                                r.estado == EstadoReserva.Pagada &&
                                (r.fecha_reserva > fechaHoy ||
                                (r.fecha_reserva == fechaHoy && r.hora_fin > horaActual)));
 
-            bool tieneReservas = await _db.Reservas.AnyAsync(r => r.Usuario.idUsuario == usuario.idUsuario);
+            bool tieneReservas = await _db.Reservas.AnyAsync(r => r.Usuario.idUsuario == usuario.idUsuario && r.Usuario.idClub == usuario.idClub);
 
             if (tieneReservas)
             {
@@ -61,31 +62,44 @@ namespace PadelApp.Repositorios
             return await GuardarAsync() ? ResultadoBorradoUsuario.Exito : ResultadoBorradoUsuario.ErrorServidor;
         }
 
-        public async Task<bool> UsuarioUnicoAsync(string email)
+        public async Task<bool> UsuarioUnicoAsync(string email, int idClub)
         {
             // Usamos AnyAsync porque es más rápido que FirstOrDefault para solo verificar existencia
-            return !await _db.Usuarios.AnyAsync(u => u.email == email && u.activo);
+            return !await _db.Usuarios.AnyAsync(u => u.email == email && u.activo && u.idClub == idClub);
         }
 
-        public async Task<bool> ExisteUsuarioAsync(int idUsuario)
+        public async Task<bool> ExisteUsuarioAsync(int idUsuario, int idClub)
         {
-            return await _db.Usuarios.AnyAsync(s => s.idUsuario == idUsuario);
+            return await _db.Usuarios.AnyAsync(s => s.idUsuario == idUsuario && s.idClub == idClub);
+        }
+        public async Task<bool> ExisteEmailAsync(string email)
+        {            
+            return await _db.Usuarios.AnyAsync(u => u.email.ToLower() == email.ToLower() && u.activo == true);
         }
 
-        public async Task<Usuario> GetUsuarioAsync(int idUsuario)
+        public async Task<Usuario> GetUsuarioAsync(int idUsuario, int idClub)
         {
-            return await _db.Usuarios.FirstOrDefaultAsync(u => u.idUsuario == idUsuario);
+            return await _db.Usuarios.FirstOrDefaultAsync(u => u.idUsuario == idUsuario && u.idClub == idClub);
         }
 
-        public async Task<Usuario> GetUsuarioAsync(string email)
+        public async Task<Usuario> GetUsuarioAsync(string email, int idClub)
         {
-            return await _db.Usuarios.FirstOrDefaultAsync(u => u.email == email);
+            return await _db.Usuarios.Include(u => u.Club).FirstOrDefaultAsync(u => u.email == email && u.idClub == idClub);
         }
-
-        public async Task<IEnumerable<Usuario>> GetUsuariosAsync()
+        public async Task<IEnumerable<Club>> GetClubesPorEmailAsync(string email)
         {
             return await _db.Usuarios
-                .Where(u => u.activo == true && u.idRol == 2)
+                .Where(u => u.email == email && u.activo == true)
+                .Include(u => u.Club) // Importante para traer los datos del club
+                .Select(u => u.Club)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Usuario>> GetUsuariosAsync(int idClub)
+        {
+            return await _db.Usuarios
+                .Where(u => u.activo == true && u.idRol == 2 && u.idClub == idClub)
                 .OrderBy(u => u.nombre)
                 .ToListAsync();
         }
@@ -108,7 +122,7 @@ namespace PadelApp.Repositorios
             return usuario;
         }
 
-        public async Task<IEnumerable<Usuario>> GetUsuariosConFiltroAsync(string filtro)
+        public async Task<IEnumerable<Usuario>> GetUsuariosConFiltroAsync(string filtro, int idClub)
         {
             var query = _db.Usuarios.AsQueryable();
 
@@ -116,6 +130,7 @@ namespace PadelApp.Repositorios
             {
                 var f = filtro.ToLower().Trim();
                 query = query.Where(u =>
+                u.idClub == idClub &&
                 u.idRol == 2 &&
                 u.activo == true && (
                     u.nombre.ToLower().Contains(f) ||
@@ -127,9 +142,9 @@ namespace PadelApp.Repositorios
             return await query.OrderBy(u => u.nombre).ToListAsync();
         }
 
-        public async Task<bool> ActualizarPasswordAsync(string email, string nuevaPassword)
+        public async Task<bool> ActualizarPasswordAsync(string email, int idClub, string nuevaPassword)
         {
-            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.email == email);
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.email == email && u.idClub == idClub);
 
             if (usuario == null) return false;
 

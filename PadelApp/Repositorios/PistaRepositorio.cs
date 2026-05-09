@@ -65,31 +65,31 @@ namespace PadelApp.Repositorios
 
             return await GuardarAsync() ? ResultadoBorradoPista.Exito : ResultadoBorradoPista.ErrorServidor;
         }
-        public async Task<bool> ExistePistaAsync(int idPista)
+        public async Task<bool> ExistePistaAsync(int idPista, int idClub)
         {
             return await _db.Pistas.AnyAsync(s => s.idPista == idPista);
         }
-        public async Task<bool> ExistePistaAsync(string nombrePista)
+        public async Task<bool> ExistePistaAsync(string nombrePista, int idClub)
         {
             return await _db.Pistas.AnyAsync(s => s.nombrePista.ToLower().Trim() == nombrePista.ToLower().Trim() && s.activo);
         }
-        public async Task<Pista> GetPistaAsync(int idPista)
+        public async Task<Pista> GetPistaAsync(int idPista, int idClub)
         {
             return await _db.Pistas
                 .Include(p => p.Sede)
                 .FirstOrDefaultAsync(p => p.idPista == idPista);
         }
-        public async Task<ICollection<Pista>> GetPistasAsync()
+        public async Task<ICollection<Pista>> GetPistasAsync(int idClub)
         {
             return await _db.Pistas.Where(p => p.activo == true)
                 .Include(p => p.Sede) // Incluimos la sede para que el DTO tenga el nombre
                 .OrderBy(s => s.nombrePista)
                 .ToListAsync();
         }
-        public async Task<ICollection<Pista>> GetPistasPorSedeAsync(int idSede)
+        public async Task<ICollection<Pista>> GetPistasPorSedeAsync(int idSede, int idClub)
         {
             return await _db.Pistas
-                .Where(p => p.idSede == idSede && p.activo == true)
+                .Where(p => p.idSede == idSede && p.activo == true && p.Sede.idClub == idClub)
                 .Include(p => p.Sede) // Incluimos la sede para que el DTO tenga el nombre
                 .ToListAsync();
         }

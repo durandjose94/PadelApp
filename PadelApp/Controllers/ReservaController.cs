@@ -11,7 +11,7 @@ namespace PadelApp.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class ReservaController : ControllerBase
+    public class ReservaController : PadelControllerBase
     {
         private readonly IReservaRepositorio _reservaRepositorio;
         private readonly IUsuarioRepositorio _usuarioRepositorio;
@@ -38,7 +38,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetReserva(int idReserva)
         {
-            var reserva = await _reservaRepositorio.GetReservaAsync(idReserva);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var reserva = await _reservaRepositorio.GetReservaAsync(idReserva, idClub);
             if (reserva == null) return NotFound();
 
             var reservaDto = _mapper.Map<ReservaDto>(reserva);
@@ -48,7 +50,9 @@ namespace PadelApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetReservas()
         {
-            var listaReservas = await _reservaRepositorio.GetReservasAsync();
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaReservas = await _reservaRepositorio.GetReservasAsync(idClub);
             var listaReservasDto = _mapper.Map<IEnumerable<ReservaDto>>(listaReservas);
             return Ok(listaReservasDto);
         }
@@ -56,10 +60,9 @@ namespace PadelApp.Controllers
         [HttpGet("Usuario/{idUsuario:int}")]
         public async Task<IActionResult> GetReservasPorUsuario(int idUsuario)
         {
-            var listaReservas = await _reservaRepositorio.GetReservasPorUsuarioAsync(idUsuario);
-            /*if (listaReservas == null || !listaReservas.Any())
-                return NotFound("No se encontraron reservas para este usuario.");*/
-
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaReservas = await _reservaRepositorio.GetReservasPorUsuarioAsync(idUsuario, idClub);
             var listaReservasDto = _mapper.Map<IEnumerable<ReservaDto>>(listaReservas);
             return Ok(listaReservasDto);
         }
@@ -67,7 +70,9 @@ namespace PadelApp.Controllers
         [HttpGet("Sede/{idSede:int}")]
         public async Task<IActionResult> GetReservasPorSede(int idSede)
         {
-            var listaReservas = await _reservaRepositorio.GetReservasPorSedeAsync(idSede);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaReservas = await _reservaRepositorio.GetReservasPorSedeAsync(idSede, idClub);
             // Si listaReservas es null, lo convertimos a una lista vacía para que el Map no falle
             if (listaReservas == null) listaReservas = new List<Reserva>();
 
@@ -83,6 +88,8 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ConfirmarPagarReserva([FromBody] CrearReservaDto crearReservaDto)
         {
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
             if (crearReservaDto == null || !ModelState.IsValid) return BadRequest(ModelState);
 
             // 1. Validación de lógica de negocio (Horas exactas)
@@ -90,7 +97,7 @@ namespace PadelApp.Controllers
                 return BadRequest("Solo se permiten reservas de bloques de una hora exacta.");
 
             // --- NUEVA VALIDACIÓN: ESTADO DE LA PISTA ---
-            var pista = await _pistaRepositorio.GetPistaAsync(crearReservaDto.idPista);
+            var pista = await _pistaRepositorio.GetPistaAsync(crearReservaDto.idPista, idClub);
 
             if (pista == null)
                 return NotFound("La pista especificada no existe.");
@@ -109,7 +116,7 @@ namespace PadelApp.Controllers
             // ----------------------------------------------------------------
 
             // 2. Validación de disponibilidad real
-            var reservasExistentes = await _reservaRepositorio.GetReservasPorPistaYFechaAsync(crearReservaDto.idPista, crearReservaDto.fecha_reserva);
+            var reservasExistentes = await _reservaRepositorio.GetReservasPorPistaYFechaAsync(crearReservaDto.idPista, crearReservaDto.fecha_reserva, idClub);
 
             bool ocupada = reservasExistentes.Any(r => r.hora_inicio == crearReservaDto.hora_inicio);
 
@@ -129,7 +136,7 @@ namespace PadelApp.Controllers
             try
             {
                 // Buscamos los datos del usuario para el PDF y el Email
-                var usuario = await _usuarioRepositorio.GetUsuarioAsync(reserva.idUsuario);
+                var usuario = await _usuarioRepositorio.GetUsuarioAsync(reserva.idUsuario, idClub);
                 //Buscamos los datos de la reserva completa (con pista y sede) para el PDF                
 
                 if (usuario != null && pista != null)
@@ -159,8 +166,10 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CancelarReserva(int idReserva)
         {
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
             // 1. Obtener la reserva completa
-            var reserva = await _reservaRepositorio.GetReservaAsync(idReserva);
+            var reserva = await _reservaRepositorio.GetReservaAsync(idReserva, idClub);
 
             if (reserva == null)
                 return NotFound();
@@ -197,7 +206,9 @@ namespace PadelApp.Controllers
         [HttpGet("disponibilidad/{idPista}/{fecha}")]
         public async Task<ActionResult<DisponibilidadDto>> GetDisponibilidad(int idPista, DateOnly fecha)
         {
-            var reservas = await _reservaRepositorio.GetReservasPorPistaYFechaAsync(idPista, fecha);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var reservas = await _reservaRepositorio.GetReservasPorPistaYFechaAsync(idPista, fecha, idClub);
 
             // Datos para validar si la hora ya pasó
             var hoy = DateOnly.FromDateTime(DateTime.Now);
@@ -236,7 +247,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ReservaDto>>> GetReservasFiltradas([FromQuery] string filtro, [FromQuery] int idSede)
         {
-            var reservas = await _reservaRepositorio.GetReservasConFiltroAsync(filtro, idSede);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var reservas = await _reservaRepositorio.GetReservasConFiltroAsync(filtro, idSede, idClub);
 
             var reservasDto = _mapper.Map<IEnumerable<ReservaDto>>(reservas);
 

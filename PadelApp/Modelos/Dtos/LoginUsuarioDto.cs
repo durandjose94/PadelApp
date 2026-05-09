@@ -8,5 +8,6 @@ namespace PadelApp.Modelos.Dtos
         public string email { get; set; }
         [Required(ErrorMessage = "La contraseña es obligatoria")]
         public string password { get; set; }
+        public int idClub { get; set; }
     }
 }

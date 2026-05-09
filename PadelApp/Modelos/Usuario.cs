@@ -39,5 +39,9 @@ namespace PadelApp.Modelos
         public int idRol { get; set; }
         [ForeignKey("idRol")]
         public Rol Rol { get; set; }
+        public int idClub { get; set; }
+
+        [ForeignKey("idClub")]
+        public Club Club { get; set; }
     }
 }

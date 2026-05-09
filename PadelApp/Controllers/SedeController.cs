@@ -11,7 +11,7 @@ namespace PadelApp.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class SedeController : ControllerBase
+    public class SedeController : PadelControllerBase
     {
         private readonly ISedeRepositorio _sedeRepositorio;
         private readonly IMapper _mapper;
@@ -27,7 +27,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetSede(int idSede)
         {
-            var sede = await _sedeRepositorio.GetSedeAsync(idSede);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var sede = await _sedeRepositorio.GetSedeAsync(idSede, idClub);
             if (sede == null)
             {
                 return NotFound();
@@ -41,7 +43,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSedes()
         {
-            var listaSedes = await _sedeRepositorio.GetSedesAsync();
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaSedes = await _sedeRepositorio.GetSedesAsync(idClub);
             var listaSedesDto = _mapper.Map<IEnumerable<SedeDto>>(listaSedes);
             return Ok(listaSedesDto);
         }
@@ -52,15 +56,17 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ActualizarSede(int idSede, [FromBody] ModificarSedeDto modificarSedeDto)
         {
+            int idClub = UsuarioClubId;
             if (!ModelState.IsValid || modificarSedeDto == null) return BadRequest(ModelState);
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            var sede = await _sedeRepositorio.GetSedeAsync(idSede);
+            var sede = await _sedeRepositorio.GetSedeAsync(idSede, idClub);
             if (sede == null) return NotFound($"No se encontró la sede con id : {idSede}");
 
-            if(!sede.activo) return BadRequest("No se puede actualizar una sede inactiva.");
+            if (!sede.activo) return BadRequest("No se puede actualizar una sede inactiva.");
 
             _mapper.Map(modificarSedeDto, sede);
-            
+
             if (!await _sedeRepositorio.ActualizarSedeAsync(sede))
             {
                 return StatusCode(500, $"Error al actualizar la sede con id : {idSede}");
@@ -76,8 +82,10 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> CrearSede([FromBody] CrearSedeDto crearSedeDto)
         {
             if (!ModelState.IsValid || crearSedeDto == null) return BadRequest(ModelState);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            if (await _sedeRepositorio.ExisteSedeAsync(crearSedeDto.nombreSede))
+            if (await _sedeRepositorio.ExisteSedeAsync(crearSedeDto.nombreSede, idClub))
             {
                 return Conflict("La sede ya existe");
             }
@@ -95,7 +103,9 @@ namespace PadelApp.Controllers
         [HttpDelete("{idSede:int}")]
         public async Task<IActionResult> BorrarSede(int idSede)
         {
-            var sede = await _sedeRepositorio.GetSedeAsync(idSede);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var sede = await _sedeRepositorio.GetSedeAsync(idSede, idClub);
             if (sede == null) return NotFound();
 
             var result = await _sedeRepositorio.EliminarSedeAsync(sede);

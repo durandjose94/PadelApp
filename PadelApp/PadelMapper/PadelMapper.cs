@@ -21,9 +21,13 @@ namespace PadelApp.PadelMapper
 
             CreateMap<Pista, ModificarPistaDto>().ReverseMap();
             CreateMap<Pista, CrearPistaDto>().ReverseMap();
-            CreateMap<Usuario, UsuarioDto>().ReverseMap();
+            CreateMap<Usuario, UsuarioDto>()
+                 .ForMember(dest => dest.nombreClub, opt => opt.MapFrom(src => src.Club.nombreClub));
+            CreateMap<UsuarioDto, Usuario>();
             CreateMap<Usuario, ModificarUsuarioDto>().ReverseMap();
-            CreateMap<Usuario, RegistroUsuarioDto>().ReverseMap();
+            CreateMap<RegistroUsuarioDto, Usuario>()
+                .ForSourceMember(src => src.CodigoInvitacion, opt => opt.DoNotValidate());
+            CreateMap<Usuario, RegistroUsuarioDto>();
             CreateMap<Reserva, ReservaDto>()
                 .ForMember(dest => dest.nombreSede, opt => opt.MapFrom(src => src.Pista.Sede.nombreSede))
                 .ForMember(dest => dest.direccionSede, opt => opt.MapFrom(src => src.Pista.Sede.direccion))
@@ -58,6 +62,7 @@ namespace PadelApp.PadelMapper
                 });
             CreateMap<Anuncio, CrearAnuncioDto>().ReverseMap();
             CreateMap<Anuncio, ModificarAnuncioDto>().ReverseMap();
+            CreateMap<Club, ClubDto>().ReverseMap();
         }
     }
 }

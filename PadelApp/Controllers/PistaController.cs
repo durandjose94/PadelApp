@@ -12,7 +12,7 @@ namespace PadelApp.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class PistaController : ControllerBase
+    public class PistaController : PadelControllerBase
     {
         private readonly IPistaRepositorio _pistaRepositorio;
         private readonly IMapper _mapper;
@@ -28,7 +28,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPista(int idPista)
         {
-            var pista = await _pistaRepositorio.GetPistaAsync(idPista);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var pista = await _pistaRepositorio.GetPistaAsync(idPista, idClub);
 
             if (pista == null)
             {
@@ -45,15 +47,13 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetPistas()
         {
-            // 1. Obtenemos la colección de forma asíncrona
-            // Recuerda que en el repositorio añadimos .Include(p => p.Sede)
-            var listaPistas = await _pistaRepositorio.GetPistasAsync();
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaPistas = await _pistaRepositorio.GetPistasAsync(idClub);
 
             // 2. Mapeamos a la lista de DTOs
             // El Mapper se encarga de convertir la ICollection en IEnumerable/List para el DTO
             var listaPistasDto = _mapper.Map<IEnumerable<PistaDto>>(listaPistas);
-
-            // 3. Devolvemos un 200 OK con la lista (vacía o llena)
             return Ok(listaPistasDto);
         }
 
@@ -62,8 +62,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPistasPorSede(int idSede)
         {
-            // 1. Llamada asíncrona al repositorio
-            var listaPistas = await _pistaRepositorio.GetPistasPorSedeAsync(idSede);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaPistas = await _pistaRepositorio.GetPistasPorSedeAsync(idSede, idClub);
 
             // Nota: Es mejor devolver una lista vacía [] con un 200 OK si no hay pistas, 
             // en lugar de un 404, para que el Front-end pueda manejar el estado "Sin resultados" fácilmente.
@@ -72,8 +73,6 @@ namespace PadelApp.Controllers
                 return NotFound("No se pudo procesar la solicitud para esta sede.");
             }
 
-            // 2. Mapeo a DTO
-            // AutoMapper maneja automáticamente colecciones (IEnumerable, ICollection, List)
             var listaPistasDto = _mapper.Map<IEnumerable<PistaDto>>(listaPistas);
 
             return Ok(listaPistasDto);
@@ -88,15 +87,17 @@ namespace PadelApp.Controllers
         {
             if (modificarPistaDto == null) return BadRequest("Los datos de entrada no pueden ser nulos.");
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            var pista = await _pistaRepositorio.GetPistaAsync(idPista);
+            var pista = await _pistaRepositorio.GetPistaAsync(idPista, idClub);
 
             if (pista == null)
             {
                 return NotFound($"No se encontró la pista con id : {idPista}");
             }
 
-            if(!pista.activo) return BadRequest("No se puede actualizar una pista inactiva.");
+            if (!pista.activo) return BadRequest("No se puede actualizar una pista inactiva.");
 
             _mapper.Map(modificarPistaDto, pista);
 
@@ -122,8 +123,10 @@ namespace PadelApp.Controllers
         {
             if (crearPistaDto == null) return BadRequest("Los datos de la pista son requeridos.");
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            if (await _pistaRepositorio.ExistePistaAsync(crearPistaDto.nombrePista))
+            if (await _pistaRepositorio.ExistePistaAsync(crearPistaDto.nombrePista, idClub))
             {
                 return Conflict("Ya existe una pista con ese nombre.");
             }
@@ -145,7 +148,9 @@ namespace PadelApp.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> BorrarPista(int idPista)
         {
-            var pista = await _pistaRepositorio.GetPistaAsync(idPista);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var pista = await _pistaRepositorio.GetPistaAsync(idPista, idClub);
             if (pista == null) return NotFound();
 
             var result = await _pistaRepositorio.EliminarPistaAsync(pista);

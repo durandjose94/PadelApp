@@ -12,8 +12,8 @@ using PadelApp.Datos;
 namespace PadelApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260421100317_MigracionesSqlServer_Azure")]
-    partial class MigracionesSqlServer_Azure
+    [Migration("20260507205008_ClubesFechas")]
+    partial class ClubesFechas
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,94 @@ namespace PadelApp.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("PadelApp.Modelos.Anuncio", b =>
+                {
+                    b.Property<int>("idAnuncio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idAnuncio"));
+
+                    b.Property<string>("descripcion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("fechaEvento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("fechaExpiracion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("fecha_actualizacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("fecha_registro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("idUsuario")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("nivelRequerido")
+                        .HasColumnType("decimal(2, 1)");
+
+                    b.Property<bool>("permiteLlamada")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("permiteWhatsapp")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("precio")
+                        .HasColumnType("decimal(10, 2)");
+
+                    b.Property<string>("telefonoContacto")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("tipoAnuncio")
+                        .HasMaxLength(20)
+                        .HasColumnType("int");
+
+                    b.Property<string>("titulo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("idAnuncio");
+
+                    b.HasIndex("idUsuario");
+
+                    b.ToTable("Anuncios");
+                });
+
+            modelBuilder.Entity("PadelApp.Modelos.Club", b =>
+                {
+                    b.Property<int>("idClub")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idClub"));
+
+                    b.Property<bool>("activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("cif")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("fecha_actualizacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("fecha_registro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("nombreClub")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("idClub");
+
+                    b.ToTable("Clubes");
+                });
 
             modelBuilder.Entity("PadelApp.Modelos.Pista", b =>
                 {
@@ -182,6 +270,9 @@ namespace PadelApp.Migrations
                     b.Property<DateTime>("fecha_registro")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("idClub")
+                        .HasColumnType("int");
+
                     b.Property<string>("nombreSede")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -190,6 +281,8 @@ namespace PadelApp.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("idSede");
+
+                    b.HasIndex("idClub");
 
                     b.ToTable("Sedes");
                 });
@@ -229,7 +322,13 @@ namespace PadelApp.Migrations
                     b.Property<DateTime>("fecha_registro")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("idClub")
+                        .HasColumnType("int");
+
                     b.Property<int>("idRol")
+                        .HasColumnType("int");
+
+                    b.Property<int>("nivel")
                         .HasColumnType("int");
 
                     b.Property<string>("nombre")
@@ -245,9 +344,22 @@ namespace PadelApp.Migrations
 
                     b.HasKey("idUsuario");
 
+                    b.HasIndex("idClub");
+
                     b.HasIndex("idRol");
 
                     b.ToTable("Usuarios");
+                });
+
+            modelBuilder.Entity("PadelApp.Modelos.Anuncio", b =>
+                {
+                    b.HasOne("PadelApp.Modelos.Usuario", "usuario")
+                        .WithMany()
+                        .HasForeignKey("idUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("usuario");
                 });
 
             modelBuilder.Entity("PadelApp.Modelos.Pista", b =>
@@ -266,13 +378,13 @@ namespace PadelApp.Migrations
                     b.HasOne("PadelApp.Modelos.Pista", "Pista")
                         .WithMany()
                         .HasForeignKey("idPista")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PadelApp.Modelos.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("idUsuario")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Pista");
@@ -280,13 +392,32 @@ namespace PadelApp.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("PadelApp.Modelos.Sede", b =>
+                {
+                    b.HasOne("PadelApp.Modelos.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("idClub")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+                });
+
             modelBuilder.Entity("PadelApp.Modelos.Usuario", b =>
                 {
+                    b.HasOne("PadelApp.Modelos.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("idClub")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("PadelApp.Modelos.Rol", "Rol")
                         .WithMany()
                         .HasForeignKey("idRol")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Club");
 
                     b.Navigation("Rol");
                 });

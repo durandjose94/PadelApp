@@ -13,6 +13,7 @@ public class AuthController : ControllerBase
     private readonly IRecuperarContraseñaRepositorio _recuperacionRepo;
     private readonly IEmailServicio _emailServicio;
 
+
     public AuthController(IUsuarioRepositorio usuarioRepo, IRecuperarContraseñaRepositorio recuperacionRepo, IEmailServicio emailServicio)
     {
         _usuarioRepo = usuarioRepo;
@@ -23,8 +24,13 @@ public class AuthController : ControllerBase
     [HttpPost("solicitar-recuperacion")]
     public async Task<IActionResult> Solicitar([FromBody] SolicitarRecuperacionDto dto)
     {
-        var usuario = await _usuarioRepo.GetUsuarioAsync(dto.Email);
-        if (usuario == null) return Ok(); // Por seguridad, no decimos si el email existe o no
+        /*var usuario = await _usuarioRepo.GetUsuarioAsync(dto.Email, 1);
+        if (usuario == null) return Ok(); // Por seguridad, no decimos si el email existe o no*/
+
+        var existe = await _usuarioRepo.ExisteEmailAsync(dto.Email);
+
+        // Si no existe, devolvemos Ok por seguridad, para no dar pistas a hackers
+        if (!existe) return Ok(new { message = "Si el correo existe, se ha enviado un código." });
 
         // 1. Generar código de 6 dígitos
         string codigo = new Random().Next(100000, 999999).ToString();
@@ -66,7 +72,16 @@ public class AuthController : ControllerBase
         var valido = await _recuperacionRepo.ObtenerCodigoValidoAsync(dto.Email, dto.Codigo);
         if (valido == null) return BadRequest("Código inválido o expirado.");
 
-        return Ok(new { message = "Código verificado correctamente." });
+        // BUSCAMOS LOS CLUBES ASOCIADOS A ESTE EMAIL        
+        var clubes = await _usuarioRepo.GetClubesPorEmailAsync(dto.Email);
+
+        return Ok(new
+        {
+            message = "Código verificado correctamente.",
+            clubes = clubes.Select(c => new { c.idClub, c.nombreClub }) // Enviamos los clubes al front
+        });
+
+        //return Ok(new { message = "Código verificado correctamente." });
     }
 
     [HttpPost("reset-password")]
@@ -77,7 +92,7 @@ public class AuthController : ControllerBase
         if (registro == null) return BadRequest("Código inválido o expirado.");
 
         // 2. Usamos el nuevo método específico del repositorio de usuarios
-        var actualizado = await _usuarioRepo.ActualizarPasswordAsync(dto.Email, dto.NuevaPassword);
+        var actualizado = await _usuarioRepo.ActualizarPasswordAsync(dto.Email, dto.idClub, dto.NuevaPassword);
 
         if (!actualizado)
         {

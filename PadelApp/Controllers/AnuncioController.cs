@@ -11,7 +11,7 @@ namespace PadelApp.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class AnuncioController : ControllerBase
+    public class AnuncioController : PadelControllerBase
     {
         private readonly IAnuncioRepositorio _repoAnuncio;
         private readonly IMapper _mapper;
@@ -26,7 +26,9 @@ namespace PadelApp.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAnunciosActivos()
         {
-            var listaAnuncios = await _repoAnuncio.GetAnunciosActivosAsync();
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaAnuncios = await _repoAnuncio.GetAnunciosActivosAsync(idClub);
             var listaAnunciosDto = _mapper.Map<IEnumerable<AnuncioDto>>(listaAnuncios);
             return Ok(listaAnunciosDto);
         }
@@ -34,7 +36,9 @@ namespace PadelApp.Controllers
         [HttpGet("mis-anuncios/{idUsuario}")]
         public async Task<IActionResult> GetMisAnuncios(int idUsuario)
         {
-            var listaAnuncios = await _repoAnuncio.GetAnunciosByUsuarioAsync(idUsuario);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var listaAnuncios = await _repoAnuncio.GetAnunciosByUsuarioAsync(idUsuario, idClub);
             var listaAnunciosDto = _mapper.Map<IEnumerable<AnuncioDto>>(listaAnuncios);
             return Ok(listaAnunciosDto);
         }
@@ -44,8 +48,10 @@ namespace PadelApp.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
             // Control de Spam
-            var count = await _repoAnuncio.CountAnunciosActivosUsuarioAsync(crearAnuncioDto.idUsuario, crearAnuncioDto.tipoAnuncio);
+            var count = await _repoAnuncio.CountAnunciosActivosUsuarioAsync(crearAnuncioDto.idUsuario, crearAnuncioDto.tipoAnuncio, idClub);
             if (count >= 3) return BadRequest(new { message = "Límite de anuncios activos alcanzado." });
 
             var anuncio = _mapper.Map<Anuncio>(crearAnuncioDto);
@@ -58,8 +64,10 @@ namespace PadelApp.Controllers
         public async Task<IActionResult> ActualizarAnuncio(int idAnuncio, [FromBody] ModificarAnuncioDto modificarAnuncioDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
 
-            var anuncioExistente = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio);
+            var anuncioExistente = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio, idClub);
             if (anuncioExistente == null) return NotFound();
 
             _mapper.Map(modificarAnuncioDto, anuncioExistente);
@@ -81,7 +89,9 @@ namespace PadelApp.Controllers
         [HttpGet("{idAnuncio:int}", Name = "GetAnuncio")]
         public async Task<IActionResult> GetAnuncio(int idAnuncio)
         {
-            var anuncio = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio);
+            int idClub = UsuarioClubId;
+            if (idClub <= 0) return Unauthorized("Club no válido");
+            var anuncio = await _repoAnuncio.GetAnuncioByIdAsync(idAnuncio, idClub);
 
             if (anuncio == null)
             {
