@@ -210,9 +210,15 @@ namespace PadelApp.Controllers
             if (idClub <= 0) return Unauthorized("Club no válido");
             var reservas = await _reservaRepositorio.GetReservasPorPistaYFechaAsync(idPista, fecha, idClub);
 
+            // 1. Forzar la hora de España (Península)
+            var zonaEspaña = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
+            var tiempoEspaña = TimeZoneInfo.ConvertTime(DateTime.Now, zonaEspaña);
+
             // Datos para validar si la hora ya pasó
-            var hoy = DateOnly.FromDateTime(DateTime.Now);
-            var ahora = TimeOnly.FromDateTime(DateTime.Now);
+            /*var hoy = DateOnly.FromDateTime(DateTime.Now);
+            var ahora = TimeOnly.FromDateTime(DateTime.Now);*/
+            var hoy = DateOnly.FromDateTime(tiempoEspaña);
+            var ahora = TimeOnly.FromDateTime(tiempoEspaña);
 
             var disponibilidad = new DisponibilidadDto
             {
@@ -234,7 +240,6 @@ namespace PadelApp.Controllers
                     Hora = horaBloque.ToString("HH:mm"),
                     // Solo está disponible si NO está ocupada Y NO ha pasado ya
                     Disponible = !estaOcupada && !esPasada,
-                    // Opcional: podrías añadir una propiedad "EsPasada" si quieres un color distinto al rojo
                     EsPasada = esPasada
                 });
             }
