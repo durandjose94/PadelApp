@@ -20,16 +20,16 @@ builder.Services.AddControllers();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // 2. Configurar el DbContext - MySQL
-/*builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseMySql(
         connectionString,
         ServerVersion.AutoDetect(connectionString) // Esto detecta si usas MySQL 8.0, 5.7, etc.
     );
-});*/
+});
 
 // Cambia .UseMySql por .UseSqlServer
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+/*builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlServerOptionsAction: sqlOptions =>
         {
@@ -37,7 +37,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 maxRetryCount: 5,
                 maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorNumbersToAdd: null);
-        }));
+        }));*/
 
 // Agrega Swagger para documentacion de la API
 
