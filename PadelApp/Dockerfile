@@ -2,12 +2,21 @@
 
 # Esta fase se usa cuando se ejecuta desde VS en modo rápido (valor predeterminado para la configuración de depuración)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+# 1. Instalamos las fuentes como ROOT antes de cambiar de usuario
+USER root
+RUN apt-get update && \
+    echo "ttf-mscorefonts-installer msttcorefontconfig/accepted-mscorefonts-eula select true" | debconf-set-selections && \
+    apt-get install -y --no-install-recommends fontconfig ttf-mscorefonts-installer && \
+    apt-get clean && \
+    rm -rf /var/lib/lists/*
+RUN fc-cache -f -v
 
+# 2. Volvemos al usuario seguro de .NET para la ejecución
+USER $APP_UID
 # Esta fase se usa para compilar el proyecto de servicio
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
