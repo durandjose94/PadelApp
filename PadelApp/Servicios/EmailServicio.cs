@@ -34,7 +34,7 @@ namespace PadelApp.Servicios
             try
             {
                 // Usamos la misma configuración de servidor y puerto que en tu otro servicio
-                await client.ConnectAsync(smtp["Server"], int.Parse(smtp["Port"]), MailKit.Security.SecureSocketOptions.StartTls);
+                await client.ConnectAsync(smtp["Server"], int.Parse(smtp["Port"]), MailKit.Security.SecureSocketOptions.SslOnConnect);
                 await client.AuthenticateAsync(smtp["SenderEmail"], smtp["Password"]);
                 await client.SendAsync(email);
                 await client.DisconnectAsync(true);
