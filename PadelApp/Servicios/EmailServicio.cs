@@ -53,7 +53,7 @@ namespace PadelApp.Servicios
             }
             catch (Exception ex)
             {
-                throw new Exception("Error crítico al conectar con la API de Brevo", ex);
+                throw new Exception($"Error real de .NET: {ex.Message} -> e inner: {ex.InnerException?.Message}", ex);
             }
             /*var smtp = _config.GetSection("SmtpSettings");
 
