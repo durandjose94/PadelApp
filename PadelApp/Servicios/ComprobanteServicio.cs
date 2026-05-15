@@ -1,20 +1,25 @@
-﻿using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using MailKit.Net.Smtp;
+﻿using MailKit.Net.Smtp;
 using MimeKit;
 using PadelApp.Modelos;
 using PadelApp.Servicios.IServicios;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 
 namespace PadelApp.Servicios
 {
     public class ComprobanteServicio : IComprobanteServicio
     {
         private readonly IConfiguration _config;
+        private readonly HttpClient _httpClient;
 
         public ComprobanteServicio(IConfiguration config)
         {
             _config = config;
+            _httpClient = new HttpClient();
         }
         public byte[] GenerarPdfReserva(Reserva reserva, Usuario usuario, Pista pista)
         {
@@ -50,18 +55,22 @@ namespace PadelApp.Servicios
                         col.Spacing(20);
 
                         // Bloque de datos
-                        col.Item().Row(row => {
-                            row.RelativeItem().Column(c => {
+                        col.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
                                 c.Item().Text("CLIENTE").FontSize(9).SemiBold().FontColor(Colors.Grey.Medium);
                                 c.Item().Text($"{usuario.nombre} {usuario.apellidos}");
                                 c.Item().Text(usuario.email);
                             });
-                            row.RelativeItem().Column(c => {
+                            row.RelativeItem().Column(c =>
+                            {
                                 c.Item().Text("DETALLES DE PISTA").FontSize(9).SemiBold().FontColor(Colors.Grey.Medium);
                                 c.Item().Text(pista.nombrePista);
                                 c.Item().Text($"Horario: {reserva.hora_inicio:HH:mm} - {reserva.hora_fin:HH:mm}");
                             });
-                            row.RelativeItem().Column(c => {
+                            row.RelativeItem().Column(c =>
+                            {
                                 c.Item().Text("DETALLES DE SEDE").FontSize(9).SemiBold().FontColor(Colors.Grey.Medium);
                                 c.Item().Text(pista.Sede.nombreSede);
                                 c.Item().Text(pista.Sede.direccion);
@@ -102,13 +111,15 @@ namespace PadelApp.Servicios
                             totalCol.Spacing(5);
 
                             // Subtotal
-                            totalCol.Item().Row(row => {
+                            totalCol.Item().Row(row =>
+                            {
                                 row.RelativeItem().Text("Base Imponible:");
                                 row.RelativeItem().AlignRight().Text($"{reserva.precio:C}");
                             });
 
                             // IVA
-                            totalCol.Item().Row(row => {
+                            totalCol.Item().Row(row =>
+                            {
                                 row.RelativeItem().Text("IVA (0%):");
                                 row.RelativeItem().AlignRight().Text("€0.00");
                             });
@@ -117,7 +128,8 @@ namespace PadelApp.Servicios
                             totalCol.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
                             // TOTAL FINAL
-                            totalCol.Item().Row(row => {
+                            totalCol.Item().Row(row =>
+                            {
                                 row.RelativeItem().Text("TOTAL").FontSize(14).SemiBold();
                                 row.RelativeItem().AlignRight().Text($"{reserva.precio:C}").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
                             });
@@ -125,7 +137,8 @@ namespace PadelApp.Servicios
                     });
 
                     // 5. PIE DE PÁGINA
-                    page.Footer().AlignCenter().Column(f => {
+                    page.Footer().AlignCenter().Column(f =>
+                    {
                         f.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten3);
                         f.Item().PaddingTop(5).Text("Este documento sirve como comprobante de pago para el acceso a las instalaciones.").FontSize(8).FontColor(Colors.Grey.Medium);
                     });
@@ -136,6 +149,58 @@ namespace PadelApp.Servicios
         public async Task EnviarEmailConComprobante(string emailDestino, byte[] pdfBytes, Reserva reserva)
         {
             var smtp = _config.GetSection("SmtpSettings");
+
+            // 1. Convertimos el PDF (byte array) a una cadena Base64
+            string pdfBase64 = Convert.ToBase64String(pdfBytes);
+
+            // 2. Preparamos los datos para Brevo
+            var payload = new
+            {
+                sender = new { name = smtp["SenderName"], email = smtp["SenderEmail"] },
+                to = new[] { new { email = emailDestino, name = "Jugador" } },
+                subject = $"Confirmación de Reserva #{reserva.idReserva}",
+                htmlContent = $@"
+            <h3>¡Hola! Tu reserva ha sido confirmada con éxito.</h3>
+            <p>Adjunto encontrarás el comprobante de tu reserva para el día <b>{reserva.fecha_reserva:dd/MM/yyyy}</b>.</p>
+            <p>Recuerda llegar 10 minutos antes de tu turno.</p>
+            <br>
+            <p>Saludos,<br>El equipo de Padel App</p>",
+                // 3. Añadimos el adjunto en el formato que pide la API de Brevo
+                attachment = new[]
+                {
+            new
+            {
+                content = pdfBase64,
+                name = $"Comprobante_Reserva_{reserva.idReserva}.pdf"
+            }
+        }
+            };
+
+            // 4. Enviamos la petición HTTP
+            var url = smtp["Server"];
+            var apiKey = smtp["Password"];
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("api-key", apiKey);
+
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync(url, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Error de Brevo al enviar comprobante: {errorBody}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error crítico al enviar el PDF con Brevo", ex);
+            }
+
+            /*var smtp = _config.GetSection("SmtpSettings");
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(smtp["SenderName"], smtp["SenderEmail"]));
@@ -161,7 +226,7 @@ namespace PadelApp.Servicios
                 await client.AuthenticateAsync(smtp["SenderEmail"], smtp["Password"]);
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
-            }
+            }*/
         }
     }
 }
