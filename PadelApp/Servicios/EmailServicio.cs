@@ -30,7 +30,7 @@ namespace PadelApp.Servicios
             email.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
-            //client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
             try
             {
                 // Usamos la misma configuración de servidor y puerto que en tu otro servicio
