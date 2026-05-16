@@ -79,11 +79,20 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("PoliticaCors", builder =>
     {
-        builder.WithOrigins("http://localhost:8100", "https://my-padel-app.vercel.app", "capacitor://localhost")
+        builder.AllowAnyOrigin()   // Acepta peticiones de CUALQUIER sitio (móviles, webs, etc)
                .AllowAnyMethod()
                .AllowAnyHeader();
     });
 });
+/*builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PoliticaCors", builder =>
+    {
+        builder.WithOrigins("http://localhost:8100", "https://my-padel-app.vercel.app", "capacitor://localhost")
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});*/
 
 //Agregamos repositorios e interfaces a la inyeccion de dependencias
 
